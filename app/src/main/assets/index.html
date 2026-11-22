@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Billing — Invoices & Estimates</title>
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#ffffff; --ink:#15213b; --muted:#687690;
+    --line:#e3e8f2; --brand:#2f67f6; --brand-d:#1f4fd0; --brand-soft:#eaf0ff;
+    --green:#15a66a; --green-soft:#e4f7ee; --red:#e5484d; --amber:#f08c00;
+    --shadow:0 2px 10px rgba(27,47,92,.06); --shadow-l:0 8px 30px rgba(27,47,92,.14);
+    --r:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:15px; line-height:1.45; padding-bottom:84px;}
+  h1,h2,h3{margin:0}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  input,select,textarea{font-family:inherit; font-size:15px; width:100%; padding:11px 12px;
+    border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); outline:none;}
+  input:focus,select:focus,textarea:focus{border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft)}
+  textarea{resize:vertical; min-height:66px}
+  label{display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin:0 0 5px 2px; letter-spacing:.2px}
+  .field{margin-bottom:13px}
+  .row{display:flex; gap:10px}
+  .row>*{flex:1}
+
+  /* App header */
+  .topbar{position:sticky; top:0; z-index:40; background:var(--brand);
+    background:linear-gradient(120deg,var(--brand),var(--brand-d));
+    color:#fff; padding:14px 16px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow)}
+  .topbar .biz{font-weight:700; font-size:16px; line-height:1.1}
+  .topbar .sub{font-size:11.5px; opacity:.85}
+  .topbar .spacer{flex:1}
+  .iconbtn{background:rgba(255,255,255,.16); color:#fff; width:38px; height:38px; border-radius:10px;
+    display:grid; place-items:center; font-size:18px}
+  .iconbtn:active{background:rgba(255,255,255,.3)}
+
+  .wrap{max-width:760px; margin:0 auto; padding:14px}
+
+  /* Cards */
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); margin-bottom:14px; overflow:hidden}
+  .card-pad{padding:15px}
+  .card-h{padding:13px 15px; border-bottom:1px solid var(--line); font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px}
+
+  /* Summary tiles */
+  .tiles{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px}
+  .tile{background:#fff; border:1px solid var(--line); border-radius:var(--r); padding:13px 14px; box-shadow:var(--shadow)}
+  .tile .k{font-size:12px; color:var(--muted); font-weight:600}
+  .tile .v{font-size:20px; font-weight:800; margin-top:3px}
+  .tile.green .v{color:var(--green)} .tile.brand .v{color:var(--brand)}
+
+  /* List rows */
+  .listrow{display:flex; align-items:center; gap:12px; padding:13px 15px; border-bottom:1px solid var(--line); cursor:pointer}
+  .listrow:last-child{border-bottom:none}
+  .listrow:active{background:var(--brand-soft)}
+  .avatar{width:40px; height:40px; border-radius:10px; background:var(--brand-soft); color:var(--brand);
+    font-weight:700; display:grid; place-items:center; flex-shrink:0; font-size:15px}
+  .listrow .main{flex:1; min-width:0}
+  .listrow .main .t{font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .listrow .main .s{font-size:12.5px; color:var(--muted)}
+  .listrow .amt{text-align:right; font-weight:700; white-space:nowrap}
+  .listrow .amt .dt{font-size:11.5px; color:var(--muted); font-weight:500}
+
+  .empty{padding:40px 20px; text-align:center; color:var(--muted)}
+  .empty .big{font-size:40px; margin-bottom:8px}
+
+  /* Buttons */
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:12px 16px;
+    border-radius:11px; font-weight:700; font-size:15px; background:var(--brand); color:#fff; width:100%}
+  .btn:active{background:var(--brand-d)}
+  .btn.ghost{background:var(--brand-soft); color:var(--brand)}
+  .btn.line{background:#fff; border:1px solid var(--line); color:var(--ink)}
+  .btn.danger{background:#fff; border:1px solid #f3c7c8; color:var(--red)}
+  .btn.sm{padding:9px 12px; font-size:13.5px; width:auto}
+  .btnrow{display:flex; gap:10px}
+
+  /* Section titles */
+  .sect{font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin:4px 2px 9px}
+
+  /* Bottom nav */
+  .nav{position:fixed; bottom:0; left:0; right:0; z-index:50; background:#fff; border-top:1px solid var(--line);
+    display:flex; padding:6px 6px calc(6px + env(safe-area-inset-bottom)); box-shadow:0 -2px 12px rgba(27,47,92,.06)}
+  .nav button{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 2px;
+    color:var(--muted); font-size:11px; font-weight:600; border-radius:10px}
+  .nav button .ic{font-size:20px; line-height:1}
+  .nav button.active{color:var(--brand)}
+  .nav .fab{flex:0 0 auto; margin:-20px 8px 0; width:56px; height:56px; border-radius:50%;
+    background:linear-gradient(135deg,var(--brand),var(--brand-d)); color:#fff; box-shadow:var(--shadow-l);
+    font-size:26px; justify-content:center}
+
+  /* Line items */
+  .li{border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; background:#fbfcfe; position:relative}
+  .li .del{position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:7px; background:#fff;
+    border:1px solid var(--line); color:var(--red); font-size:15px; display:grid; place-items:center}
+  .li .liName{font-weight:600; margin-bottom:9px; padding-right:30px}
+  .mini{font-size:11px; color:var(--muted); margin:0 0 4px 2px; font-weight:600}
+
+  /* Totals */
+  .totrow{display:flex; justify-content:space-between; padding:5px 0; font-size:14px}
+  .totrow.grand{border-top:2px solid var(--line); margin-top:8px; padding-top:11px; font-size:18px; font-weight:800}
+  .totrow .muted{color:var(--muted)}
+
+  .pill{display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px}
+  .pill.green{background:var(--green-soft); color:var(--green)}
+  .pill.brand{background:var(--brand-soft); color:var(--brand)}
+  .pill.amber{background:#fdf0dc; color:var(--amber)}
+
+  .hint{font-size:12px; color:var(--muted); background:#f7f9fd; border:1px dashed var(--line);
+    border-radius:10px; padding:9px 11px; margin-top:-4px; margin-bottom:12px}
+  .foundtag{font-size:11.5px; color:var(--green); font-weight:700; margin-top:5px; display:none}
+
+  /* Modal / sheet */
+  .screen{display:none}
+  .screen.on{display:block}
+  .backdrop{position:fixed; inset:0; background:rgba(16,28,54,.45); z-index:60; display:none; align-items:flex-end}
+  .backdrop.on{display:flex}
+  .sheet{background:var(--bg); width:100%; max-height:94vh; border-radius:20px 20px 0 0; overflow:auto;
+    animation:up .25s ease}
+  @keyframes up{from{transform:translateY(40px); opacity:.5}to{transform:none; opacity:1}}
+  .sheet-h{position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--line);
+    padding:14px 16px; display:flex; align-items:center; gap:10px; z-index:2}
+  .sheet-h .ttl{font-weight:700; font-size:16px; flex:1}
+  .closex{width:34px; height:34px; border-radius:9px; background:#eef1f7; display:grid; place-items:center; font-size:18px; color:var(--muted)}
+
+  /* Invoice preview (print) */
+  .doc{background:#fff; color:#1a1a1a; padding:26px 24px; font-size:13px}
+  .doc h2{font-size:21px}
+  .doc .dhead{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:3px solid var(--brand); padding-bottom:14px; margin-bottom:16px}
+  .doc .dtitle{text-align:right}
+  .doc .dtitle .big{font-size:24px; font-weight:800; color:var(--brand); letter-spacing:1px}
+  .doc .parties{display:flex; gap:16px; margin-bottom:16px; flex-wrap:wrap}
+  .doc .party{flex:1; min-width:150px}
+  .doc .party .lab{font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:#888; font-weight:700; margin-bottom:4px}
+  .doc .party .nm{font-weight:700; font-size:14px}
+  .doc table{width:100%; border-collapse:collapse; margin:10px 0; font-size:12px}
+  .doc th{background:var(--brand); color:#fff; padding:8px 8px; text-align:left; font-size:11px}
+  .doc th.r,.doc td.r{text-align:right}
+  .doc td{padding:8px 8px; border-bottom:1px solid #e6e6e6}
+  .doc tfoot td{border:none; padding:3px 8px}
+  .doc .totbox{margin-left:auto; width:260px}
+  .doc .gtot{font-size:16px; font-weight:800; color:var(--brand); border-top:2px solid var(--brand); padding-top:8px}
+  .doc .words{margin-top:8px; font-size:11.5px; font-style:italic; color:#555}
+  .doc .foot{margin-top:20px; border-top:1px solid #e6e6e6; padding-top:12px; display:flex; justify-content:space-between; gap:16px; font-size:11.5px; color:#555}
+  .doc .sign{text-align:right}
+  .doc .sign .line{margin-top:34px; border-top:1px solid #999; padding-top:4px; display:inline-block; min-width:140px}
+
+  .toast{position:fixed; bottom:94px; left:50%; transform:translateX(-50%) translateY(20px); z-index:90;
+    background:#15213b; color:#fff; padding:11px 18px; border-radius:12px; font-size:13.5px; font-weight:600;
+    opacity:0; pointer-events:none; transition:.28s; box-shadow:var(--shadow-l); white-space:nowrap}
+  .toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  @media print{
+    body *{visibility:hidden}
+    #printArea, #printArea *{visibility:visible}
+    #printArea{position:absolute; left:0; top:0; width:100%}
+    .nav,.topbar,.sheet-h{display:none !important}
+  }
+  @media(min-width:640px){ .tiles{grid-template-columns:repeat(4,1fr)} }
+</style>
+</head>
+<body>
+
+<!-- ======= HEADER ======= -->
+<div class="topbar">
+  <div>
+    <div class="biz" id="hdrBiz">My Business</div>
+    <div class="sub" id="hdrSub">Invoicing & Estimates</div>
+  </div>
+  <div class="spacer"></div>
+  <button class="iconbtn" onclick="openSettings()" title="Business settings">⚙️</button>
+</div>
+
+<!-- ======= HOME ======= -->
+<div class="wrap">
+
+  <div id="scr-home" class="screen on">
+    <div class="tiles">
+      <div class="tile brand"><div class="k">Invoices</div><div class="v" id="tInvCount">0</div></div>
+      <div class="tile green"><div class="k">Total Billed</div><div class="v" id="tBilled">₹0</div></div>
+      <div class="tile"><div class="k">Estimates</div><div class="v" id="tEstCount">0</div></div>
+      <div class="tile"><div class="k">Saved Parties</div><div class="v" id="tParties">0</div></div>
+    </div>
+
+    <div class="btnrow" style="margin-bottom:16px">
+      <button class="btn" onclick="newDoc('invoice')">＋ New Invoice</button>
+      <button class="btn ghost" onclick="newDoc('estimate')">＋ New Estimate</button>
+    </div>
+
+    <div class="sect">Recent</div>
+    <div class="card"><div id="homeList"></div></div>
+  </div>
+
+  <!-- ======= INVOICES LIST ======= -->
+  <div id="scr-invoices" class="screen">
+    <div class="sect">All Invoices</div>
+    <div class="card"><div id="invList"></div></div>
+  </div>
+
+  <!-- ======= ESTIMATES LIST ======= -->
+  <div id="scr-estimates" class="screen">
+    <div class="sect">All Estimates</div>
+    <div class="card"><div id="estList"></div></div>
+  </div>
+
+  <!-- ======= PARTIES ======= -->
+  <div id="scr-parties" class="screen">
+    <div class="sect">Customers / Parties</div>
+    <div class="hint">💡 Enter a customer’s GSTIN once with their company name &amp; address. Next time you type that same GSTIN on a bill, the details fill in automatically.</div>
+    <div class="card"><div id="partyList"></div></div>
+    <button class="btn ghost" onclick="editParty()">＋ Add Party</button>
+  </div>
+
+</div>
+
+<!-- ======= BOTTOM NAV ======= -->
+<div class="nav">
+  <button data-nav="home" class="active" onclick="go('home')"><span class="ic">🏠</span>Home</button>
+  <button data-nav="invoices" onclick="go('invoices')"><span class="ic">🧾</span>Invoices</button>
+  <button class="fab" onclick="newDoc('invoice')">＋</button>
+  <button data-nav="estimates" onclick="go('estimates')"><span class="ic">📄</span>Estimates</button>
+  <button data-nav="parties" onclick="go('parties')"><span class="ic">👥</span>Parties</button>
+</div>
+
+<!-- ======= EDITOR SHEET ======= -->
+<div class="backdrop" id="editorBD">
+  <div class="sheet">
+    <div class="sheet-h">
+      <button class="closex" onclick="closeSheet('editorBD')">✕</button>
+      <div class="ttl" id="editorTitle">New Invoice</div>
+      <button class="btn sm" onclick="saveDoc()">Save</button>
+    </div>
+    <div class="card-pad">
+
+      <div class="card">
+        <div class="card-h">👤 Customer / Bill To</div>
+        <div class="card-pad">
+          <div class="field">
+            <label>GSTIN (optional)</label>
+            <input id="fGstin" maxlength="15" placeholder="e.g. 29ABCDE1234F1Z5" oninput="onGstin(this)" style="text-transform:uppercase">
+            <div class="foundtag" id="gstFound">✓ Saved party found — details filled in</div>
+          </div>
+          <div class="field">
+            <label>Customer / Company Name *</label>
+            <input id="fCustName" placeholder="Customer or company name">
+          </div>
+          <div class="row">
+            <div class="field"><label>Phone</label><input id="fPhone" inputmode="tel" placeholder="Mobile no."></div>
+            <div class="field"><label>State</label><input id="fState" placeholder="State" readonly></div>
+          </div>
+          <div class="field">
+            <label>Billing Address</label>
+            <textarea id="fAddr" placeholder="Street, city, PIN code"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">🛒 Items</div>
+        <div class="card-pad">
+          <div id="itemsBox"></div>
+          <button class="btn line" onclick="addItem()">＋ Add Item</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">🧮 Summary</div>
+        <div class="card-pad">
+          <div class="field">
+            <label>Notes / Terms (optional)</label>
+            <textarea id="fNotes" placeholder="Thank you for your business!"></textarea>
+          </div>
+          <div id="liveTotals"></div>
+        </div>
+      </div>
+
+      <button class="btn" onclick="saveDoc()">💾 Save &amp; Preview</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= VIEW / PRINT SHEET ======= -->
+<div class="backdrop" id="viewBD">
+  <div class="sheet">
+    <div class="sheet-h">
+      <button class="closex" onclick="closeSheet('viewBD')">✕</button>
+      <div class="ttl" id="viewTitle">Invoice</div>
+    </div>
+    <div style="padding:12px">
+      <div class="btnrow" style="margin-bottom:12px">
+        <button class="btn sm" style="flex:1" onclick="printDoc()">🖨️ Print / PDF</button>
+        <button class="btn sm ghost" style="flex:1" onclick="shareDoc()">🔗 Share Text</button>
+        <button class="btn sm line" style="flex:0 0 auto" onclick="editCurrent()">✏️</button>
+        <button class="btn sm danger" style="flex:0 0 auto" onclick="deleteCurrent()">🗑️</button>
+      </div>
+      <div id="printArea"><div class="doc card" id="docBody"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= SETTINGS SHEET ======= -->
+<div class="backdrop" id="setBD">
+  <div class="sheet">
+    <div class="sheet-h">
+      <button class="closex" onclick="closeSheet('setBD')">✕</button>
+      <div class="ttl">Business Settings</div>
+      <button class="btn sm" onclick="saveSettings()">Save</button>
+    </div>
+    <div class="card-pad">
+      <div class="hint">These details appear as the “From” on every invoice &amp; estimate.</div>
+      <div class="card"><div class="card-pad">
+        <div class="field"><label>Business Name *</label><input id="sName" placeholder="Your company name"></div>
+        <div class="field"><label>Your GSTIN</label><input id="sGstin" maxlength="15" placeholder="Your 15-digit GSTIN" style="text-transform:uppercase"></div>
+        <div class="row">
+          <div class="field"><label>Phone</label><input id="sPhone" inputmode="tel" placeholder="Contact no."></div>
+          <div class="field"><label>Email</label><input id="sEmail" inputmode="email" placeholder="Email"></div>
+        </div>
+        <div class="field"><label>Address</label><textarea id="sAddr" placeholder="Business address"></textarea></div>
+        <div class="row">
+          <div class="field"><label>Currency symbol</label><input id="sCurr" placeholder="₹" maxlength="3"></div>
+          <div class="field"><label>Default GST %</label><input id="sTax" inputmode="decimal" placeholder="18"></div>
+        </div>
+        <div class="field"><label>Invoice footer / Terms</label><textarea id="sTerms" placeholder="Terms & conditions, bank details, etc."></textarea></div>
+      </div></div>
+      <button class="btn line danger" onclick="wipeAll()">Reset all data</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= PARTY EDIT SHEET ======= -->
+<div class="backdrop" id="partyBD">
+  <div class="sheet">
+    <div class="sheet-h">
+      <button class="closex" onclick="closeSheet('partyBD')">✕</button>
+      <div class="ttl">Party Details</div>
+      <button class="btn sm" onclick="saveParty()">Save</button>
+    </div>
+    <div class="card-pad">
+      <div class="card"><div class="card-pad">
+        <div class="field"><label>GSTIN</label><input id="pGstin" maxlength="15" placeholder="15-digit GSTIN" style="text-transform:uppercase"></div>
+        <div class="field"><label>Company / Customer Name *</label><input id="pName" placeholder="Name"></div>
+        <div class="field"><label>Phone</label><input id="pPhone" inputmode="tel" placeholder="Phone"></div>
+        <div class="field"><label>Address</label><textarea id="pAddr" placeholder="Address"></textarea></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- storage (safe) ---------- */
+const DB={
+  _m:{},
+  get(k,d){ try{const v=localStorage.getItem(k); return v==null?d:JSON.parse(v)}catch(e){return (k in this._m)?this._m[k]:d} },
+  set(k,v){ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){this._m[k]=v} }
+};
+let settings = DB.get('biz', {name:'My Business',gstin:'',phone:'',email:'',addr:'',curr:'₹',tax:'18',terms:'Thank you for your business!'});
+let docs    = DB.get('docs', []);        // invoices + estimates
+let parties = DB.get('parties', []);     // saved customers
+let seq     = DB.get('seq', {invoice:0, estimate:0});
+let current = null;                       // doc being viewed
+let editMode= 'invoice';
+
+/* ---------- GST state codes ---------- */
+const GST_STATES={ '01':'Jammu & Kashmir','02':'Himachal Pradesh','03':'Punjab','04':'Chandigarh','05':'Uttarakhand','06':'Haryana','07':'Delhi','08':'Rajasthan','09':'Uttar Pradesh','10':'Bihar','11':'Sikkim','12':'Arunachal Pradesh','13':'Nagaland','14':'Manipur','15':'Mizoram','16':'Tripura','17':'Meghalaya','18':'Assam','19':'West Bengal','20':'Jharkhand','21':'Odisha','22':'Chhattisgarh','23':'Madhya Pradesh','24':'Gujarat','25':'Daman & Diu','26':'Dadra & Nagar Haveli','27':'Maharashtra','28':'Andhra Pradesh (Old)','29':'Karnataka','30':'Goa','31':'Lakshadweep','32':'Kerala','33':'Tamil Nadu','34':'Puducherry','35':'Andaman & Nicobar','36':'Telangana','37':'Andhra Pradesh','38':'Ladakh','97':'Other Territory' };
+const stateFromGstin = g => GST_STATES[(g||'').slice(0,2)] || '';
+const curr = ()=> settings.curr || '₹';
+const money = n => curr()+ (Number(n)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ---------- toast ---------- */
+let tT; function toast(m){const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'),1900);}
+
+/* ---------- navigation ---------- */
+function go(nav){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById('scr-'+nav).classList.add('on');
+  document.querySelectorAll('.nav [data-nav]').forEach(b=>b.classList.toggle('active', b.dataset.nav===nav));
+  render();
+  window.scrollTo(0,0);
+}
+function openSheet(id){document.getElementById(id).classList.add('on'); document.body.style.overflow='hidden';}
+function closeSheet(id){document.getElementById(id).classList.remove('on'); document.body.style.overflow='';}
+
+/* ---------- settings ---------- */
+function openSettings(){
+  sName.value=settings.name; sGstin.value=settings.gstin; sPhone.value=settings.phone;
+  sEmail.value=settings.email; sAddr.value=settings.addr; sCurr.value=settings.curr;
+  sTax.value=settings.tax; sTerms.value=settings.terms;
+  openSheet('setBD');
+}
+function saveSettings(){
+  if(!sName.value.trim()){toast('Enter a business name'); return;}
+  settings={name:sName.value.trim(),gstin:sGstin.value.trim().toUpperCase(),phone:sPhone.value.trim(),
+    email:sEmail.value.trim(),addr:sAddr.value.trim(),curr:(sCurr.value.trim()||'₹'),
+    tax:(sTax.value.trim()||'0'),terms:sTerms.value.trim()};
+  DB.set('biz',settings); applyBiz(); closeSheet('setBD'); toast('Settings saved'); render();
+}
+function applyBiz(){ hdrBiz.textContent=settings.name||'My Business';
+  hdrSub.textContent = settings.gstin? ('GSTIN: '+settings.gstin) : 'Invoicing & Estimates'; }
+
+/* ---------- parties ---------- */
+function findParty(g){ g=(g||'').trim().toUpperCase(); return parties.find(p=>(p.gstin||'').toUpperCase()===g && g.length>=15); }
+function onGstin(el){
+  el.value=el.value.toUpperCase();
+  fState.value = stateFromGstin(el.value);
+  const p=findParty(el.value);
+  const tag=document.getElementById('gstFound');
+  if(p){ fCustName.value=p.name||''; fPhone.value=p.phone||''; fAddr.value=p.addr||''; tag.style.display='block'; }
+  else tag.style.display='none';
+}
+function editParty(g){
+  const p = g? parties.find(x=>x.id===g) : null;
+  pGstin.value=p?.gstin||''; pName.value=p?.name||''; pPhone.value=p?.phone||''; pAddr.value=p?.addr||'';
+  partyBD.dataset.id = p?.id||'';
+  openSheet('partyBD');
+}
+function saveParty(){
+  if(!pName.value.trim()){toast('Enter a name'); return;}
+  const id=partyBD.dataset.id;
+  const obj={id:id||('p'+Date.now()), gstin:pGstin.value.trim().toUpperCase(), name:pName.value.trim(),
+    phone:pPhone.value.trim(), addr:pAddr.value.trim()};
+  if(id){ const i=parties.findIndex(x=>x.id===id); parties[i]=obj; } else parties.unshift(obj);
+  DB.set('parties',parties); closeSheet('partyBD'); toast('Party saved'); render();
+}
+function upsertPartyFromDoc(d){
+  if(!d.custGstin || d.custGstin.length<15) return;
+  const ex=findParty(d.custGstin);
+  const obj={id:ex?.id||('p'+Date.now()), gstin:d.custGstin, name:d.custName, phone:d.custPhone, addr:d.custAddr};
+  if(ex){ const i=parties.findIndex(x=>x.id===ex.id); parties[i]=obj; } else parties.unshift(obj);
+  DB.set('parties',parties);
+}
+
+/* ---------- editor ---------- */
+let draftItems=[];
+function newDoc(type){
+  editMode=type; current=null; editorBD.dataset.id='';
+  editorTitle.textContent = type==='invoice'?'New Invoice':'New Estimate';
+  fGstin.value='';fCustName.value='';fPhone.value='';fState.value='';fAddr.value='';fNotes.value=settings.terms||'';
+  document.getElementById('gstFound').style.display='none';
+  draftItems=[{name:'',qty:1,price:0,tax:Number(settings.tax)||0}];
+  renderItems(); openSheet('editorBD');
+}
+function addItem(){ draftItems.push({name:'',qty:1,price:0,tax:Number(settings.tax)||0}); renderItems(); }
+function delItem(i){ draftItems.splice(i,1); if(!draftItems.length) addItem(); else renderItems(); }
+function readItemInputs(){
+  document.querySelectorAll('#itemsBox .li').forEach((el,i)=>{
+    draftItems[i]={ name:el.querySelector('.iName').value, qty:parseFloat(el.querySelector('.iQty').value)||0,
+      price:parseFloat(el.querySelector('.iPrice').value)||0, tax:parseFloat(el.querySelector('.iTax').value)||0 };
+  });
+}
+function renderItems(){
+  itemsBox.innerHTML = draftItems.map((it,i)=>`
+    <div class="li">
+      <button class="del" onclick="readItemInputs();delItem(${i})">✕</button>
+      <input class="iName" placeholder="Item / service name" value="${esc(it.name)}" oninput="recalc()">
+      <div class="row" style="margin-top:9px">
+        <div><div class="mini">Qty</div><input class="iQty" inputmode="decimal" value="${it.qty}" oninput="recalc()"></div>
+        <div><div class="mini">Rate (${curr()})</div><input class="iPrice" inputmode="decimal" value="${it.price}" oninput="recalc()"></div>
+        <div><div class="mini">GST %</div><input class="iTax" inputmode="decimal" value="${it.tax}" oninput="recalc()"></div>
+      </div>
+      <div style="text-align:right; margin-top:7px; font-weight:700; font-size:13px" class="liAmt"></div>
+    </div>`).join('');
+  recalc();
+}
+function computeTotals(items, custGstin){
+  let sub=0, tax=0;
+  items.forEach(it=>{ const line=(it.qty||0)*(it.price||0); sub+=line; tax+=line*((it.tax||0)/100); });
+  const bizState=(settings.gstin||'').slice(0,2);
+  const cusState=(custGstin||'').slice(0,2);
+  const inter = cusState && bizState && cusState!==bizState;   // IGST if different states
+  return {sub, tax, total:sub+tax, inter, cgst:tax/2, sgst:tax/2, igst:tax};
+}
+function recalc(){
+  readItemInputs();
+  document.querySelectorAll('#itemsBox .li').forEach((el,i)=>{
+    const it=draftItems[i]; el.querySelector('.liAmt').textContent = money((it.qty||0)*(it.price||0));
+  });
+  const t=computeTotals(draftItems, fGstin.value.trim());
+  liveTotals.innerHTML = totalsHTML(t);
+}
+function totalsHTML(t){
+  const gst = t.inter
+    ? `<div class="totrow"><span class="muted">IGST</span><span>${money(t.igst)}</span></div>`
+    : `<div class="totrow"><span class="muted">CGST</span><span>${money(t.cgst)}</span></div>
+       <div class="totrow"><span class="muted">SGST</span><span>${money(t.sgst)}</span></div>`;
+  return `<div class="totrow"><span class="muted">Subtotal</span><span>${money(t.sub)}</span></div>
+    ${t.tax>0?gst:''}
+    <div class="totrow grand"><span>Total</span><span>${money(t.total)}</span></div>`;
+}
+
+function saveDoc(){
+  readItemInputs();
+  if(!fCustName.value.trim()){toast('Enter customer name'); go && openSheet('editorBD'); return;}
+  const items=draftItems.filter(it=>it.name.trim()||it.price>0);
+  if(!items.length){toast('Add at least one item'); return;}
+  const id=editorBD.dataset.id;
+  let number;
+  if(id){ number=current.number; }
+  else { seq[editMode]=(seq[editMode]||0)+1; DB.set('seq',seq);
+    number=(editMode==='invoice'?'INV-':'EST-')+String(seq[editMode]).padStart(4,'0'); }
+  const d={
+    id: id||('d'+Date.now()), type:editMode, number,
+    date: current?.date || new Date().toISOString().slice(0,10),
+    custName:fCustName.value.trim(), custGstin:fGstin.value.trim().toUpperCase(),
+    custPhone:fPhone.value.trim(), custAddr:fAddr.value.trim(), custState:fState.value,
+    notes:fNotes.value.trim(), items
+  };
+  if(id){ const i=docs.findIndex(x=>x.id===id); docs[i]=d; } else docs.unshift(d);
+  DB.set('docs',docs);
+  upsertPartyFromDoc(d);
+  closeSheet('editorBD'); render(); toast((editMode==='invoice'?'Invoice':'Estimate')+' saved'); viewDoc(d.id);
+}
+
+/* ---------- view / doc ---------- */
+function viewDoc(id){
+  current=docs.find(x=>x.id===id); if(!current) return;
+  viewTitle.textContent = (current.type==='invoice'?'Invoice ':'Estimate ')+current.number;
+  docBody.innerHTML = docHTML(current);
+  openSheet('viewBD');
+}
+function docHTML(d){
+  const t=computeTotals(d.items, d.custGstin);
+  const isInv=d.type==='invoice';
+  const rows=d.items.map((it,i)=>{
+    const line=(it.qty||0)*(it.price||0);
+    return `<tr><td>${i+1}</td><td>${esc(it.name)||'-'}</td><td class="r">${it.qty}</td>
+      <td class="r">${money(it.price)}</td><td class="r">${it.tax||0}%</td><td class="r">${money(line)}</td></tr>`;
+  }).join('');
+  const gstRows = t.tax>0 ? (t.inter
+    ? `<tr><td>IGST</td><td class="r">${money(t.igst)}</td></tr>`
+    : `<tr><td>CGST</td><td class="r">${money(t.cgst)}</td></tr><tr><td>SGST</td><td class="r">${money(t.sgst)}</td></tr>`) : '';
+  return `
+  <div class="dhead">
+    <div>
+      <h2>${esc(settings.name)||'My Business'}</h2>
+      ${settings.addr?`<div style="color:#555;white-space:pre-line">${esc(settings.addr)}</div>`:''}
+      ${settings.phone?`<div style="color:#555">📞 ${esc(settings.phone)}</div>`:''}
+      ${settings.email?`<div style="color:#555">✉️ ${esc(settings.email)}</div>`:''}
+      ${settings.gstin?`<div style="color:#555">GSTIN: <b>${esc(settings.gstin)}</b></div>`:''}
+    </div>
+    <div class="dtitle">
+      <div class="big">${isInv?'INVOICE':'ESTIMATE'}</div>
+      <div style="margin-top:6px"><b>${esc(d.number)}</b></div>
+      <div style="color:#555">Date: ${fmtDate(d.date)}</div>
+    </div>
+  </div>
+  <div class="parties">
+    <div class="party">
+      <div class="lab">${isInv?'Bill To':'Estimate For'}</div>
+      <div class="nm">${esc(d.custName)}</div>
+      ${d.custAddr?`<div style="color:#555;white-space:pre-line">${esc(d.custAddr)}</div>`:''}
+      ${d.custState?`<div style="color:#555">State: ${esc(d.custState)}</div>`:''}
+      ${d.custPhone?`<div style="color:#555">📞 ${esc(d.custPhone)}</div>`:''}
+      ${d.custGstin?`<div style="color:#555">GSTIN: <b>${esc(d.custGstin)}</b></div>`:''}
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">GST</th><th class="r">Amount</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <table class="totbox">
+    <tr><td>Subtotal</td><td class="r">${money(t.sub)}</td></tr>
+    ${gstRows}
+    <tr><td class="gtot">Total</td><td class="r gtot">${money(t.total)}</td></tr>
+  </table>
+  <div class="words">Amount in words: ${inWords(t.total)}</div>
+  <div class="foot">
+    <div>${d.notes?esc(d.notes):(settings.terms?esc(settings.terms):'')}</div>
+    <div class="sign">For ${esc(settings.name)||'My Business'}<div class="line">Authorised Signatory</div></div>
+  </div>`;
+}
+function editCurrent(){
+  if(!current) return;
+  editMode=current.type; editorBD.dataset.id=current.id;
+  editorTitle.textContent='Edit '+current.number;
+  fGstin.value=current.custGstin; fCustName.value=current.custName; fPhone.value=current.custPhone;
+  fState.value=current.custState; fAddr.value=current.custAddr; fNotes.value=current.notes;
+  document.getElementById('gstFound').style.display='none';
+  draftItems=current.items.map(x=>({...x})); renderItems();
+  closeSheet('viewBD'); openSheet('editorBD');
+}
+function deleteCurrent(){
+  if(!current) return;
+  docs=docs.filter(x=>x.id!==current.id); DB.set('docs',docs);
+  closeSheet('viewBD'); render(); toast('Deleted');
+}
+function printDoc(){ window.print(); }
+function shareDoc(){
+  if(!current) return;
+  const t=computeTotals(current.items,current.custGstin);
+  const txt=`${settings.name}\n${current.type==='invoice'?'INVOICE':'ESTIMATE'} ${current.number}\nDate: ${fmtDate(current.date)}\n`+
+    `To: ${current.custName}\n`+
+    current.items.map(it=>`• ${it.name} — ${it.qty} x ${money(it.price)} = ${money(it.qty*it.price)}`).join('\n')+
+    `\nTotal: ${money(t.total)}\n`;
+  if(navigator.share){ navigator.share({title:current.number, text:txt}).catch(()=>{}); }
+  else { navigator.clipboard?.writeText(txt).then(()=>toast('Copied to clipboard'),()=>toast('Copy not available')); }
+}
+
+/* ---------- lists / render ---------- */
+function docRow(d){
+  const t=computeTotals(d.items,d.custGstin);
+  const init=(d.custName||'?').trim().charAt(0).toUpperCase();
+  const pill = d.type==='invoice'?'<span class="pill brand">Invoice</span>':'<span class="pill amber">Estimate</span>';
+  return `<div class="listrow" onclick="viewDoc('${d.id}')">
+    <div class="avatar">${esc(init)}</div>
+    <div class="main"><div class="t">${esc(d.custName)}</div>
+      <div class="s">${esc(d.number)} • ${pill}</div></div>
+    <div class="amt">${money(t.total)}<div class="dt">${fmtDate(d.date)}</div></div>
+  </div>`;
+}
+function emptyBox(msg,icon){ return `<div class="empty"><div class="big">${icon}</div>${msg}</div>`; }
+function render(){
+  applyBiz();
+  const inv=docs.filter(d=>d.type==='invoice'), est=docs.filter(d=>d.type==='estimate');
+  const billed=inv.reduce((s,d)=>s+computeTotals(d.items,d.custGstin).total,0);
+  tInvCount.textContent=inv.length; tEstCount.textContent=est.length;
+  tParties.textContent=parties.length; tBilled.textContent=money(billed).replace(/\.00$/,'');
+  homeList.innerHTML = docs.length? docs.slice(0,6).map(docRow).join('') : emptyBox('No bills yet. Tap ＋ to create one.','🧾');
+  invList.innerHTML  = inv.length? inv.map(docRow).join('') : emptyBox('No invoices yet.','🧾');
+  estList.innerHTML  = est.length? est.map(docRow).join('') : emptyBox('No estimates yet.','📄');
+  partyList.innerHTML= parties.length? parties.map(p=>`
+    <div class="listrow" onclick="editParty('${p.id}')">
+      <div class="avatar">${esc((p.name||'?').charAt(0).toUpperCase())}</div>
+      <div class="main"><div class="t">${esc(p.name)}</div>
+        <div class="s">${p.gstin?('GSTIN: '+esc(p.gstin)):(p.phone?esc(p.phone):'No GSTIN')}</div></div>
+      <div class="amt" style="font-size:18px;color:var(--muted)">›</div>
+    </div>`).join('') : emptyBox('No saved parties. Add one so GSTIN auto-fills next time.','👥');
+}
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmtDate(iso){ if(!iso) return ''; const d=new Date(iso+'T00:00'); return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+function wipeAll(){ if(confirm('Delete ALL invoices, estimates, parties and settings? This cannot be undone.')){ docs=[];parties=[];seq={invoice:0,estimate:0}; DB.set('docs',docs);DB.set('parties',parties);DB.set('seq',seq); closeSheet('setBD'); render(); toast('All data cleared'); } }
+/* number to Indian words */
+function inWords(num){
+  num=Math.round(Number(num)||0); if(num===0) return 'Zero Rupees Only';
+  const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function two(n){ return n<20?a[n]:b[Math.floor(n/10)]+(n%10?' '+a[n%10]:''); }
+  function three(n){ return (n>=100?a[Math.floor(n/100)]+' Hundred'+(n%100?' ':''):'')+(n%100?two(n%100):''); }
+  let s='', cr=Math.floor(num/10000000); num%=10000000;
+  let lk=Math.floor(num/100000); num%=100000;
+  let th=Math.floor(num/1000); num%=1000;
+  if(cr) s+=three(cr)+' Crore ';
+  if(lk) s+=two(lk)+' Lakh ';
+  if(th) s+=two(th)+' Thousand ';
+  if(num) s+=three(num);
+  return s.trim()+' Rupees Only';
+}
+
+/* ---------- boot ---------- */
+if(!docs.length && !DB.get('seeded',false)){
+  // light first-run sample so the app isn't empty
+  DB.set('seeded',true);
+}
+applyBiz(); render();
+if(!settings.name || settings.name==='My Business'){ /* nudge to settings on first open */ }
+</script>
+</body>
+</html>
