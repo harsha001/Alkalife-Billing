@@ -599,17 +599,27 @@ function printDoc(){
   }
   window.print(); // browser fallback
 }
+function currentDocFullHtml(){
+  // Standalone HTML of just the current invoice/estimate, for PDF rendering.
+  const css=document.querySelector('style').innerHTML;
+  const body=document.getElementById('docBody').outerHTML;
+  return '<!DOCTYPE html><html><head><meta charset="utf-8">'+
+    '<meta name="viewport" content="width=794">'+
+    '<style>'+css+' html,body{background:#fff;margin:0;padding:0;}'+
+    ' .doc{box-shadow:none;border:none;border-radius:0;margin:0;}</style>'+
+    '</head><body>'+body+'</body></html>';
+}
 function downloadDoc(){
   // Save the invoice/estimate PDF to the device's Downloads folder.
   if(window.AndroidApp && typeof window.AndroidApp.downloadPdf==='function'){
-    try{ window.AndroidApp.downloadPdf(docName()); toast('Saving PDF to Downloads…'); return; }catch(e){}
+    try{ window.AndroidApp.downloadPdf(docName(), currentDocFullHtml()); toast('Saving PDF to Downloads…'); return; }catch(e){}
   }
   window.print(); // browser fallback -> choose "Save as PDF"
 }
 function shareDocPdf(){
   // Open the Android share sheet with the PDF attached (WhatsApp, Gmail, etc.).
   if(window.AndroidApp && typeof window.AndroidApp.sharePdf==='function'){
-    try{ window.AndroidApp.sharePdf(docName()); return; }catch(e){}
+    try{ window.AndroidApp.sharePdf(docName(), currentDocFullHtml()); return; }catch(e){}
   }
   shareDoc(); // browser fallback -> share text
 }
