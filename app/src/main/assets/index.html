@@ -289,9 +289,13 @@
       <div class="ttl" id="viewTitle">Invoice</div>
     </div>
     <div style="padding:12px">
+      <div class="btnrow" style="margin-bottom:8px">
+        <button class="btn sm" style="flex:1" onclick="downloadDoc()">📥 Download PDF</button>
+        <button class="btn sm ghost" style="flex:1" onclick="shareDocPdf()">📤 Share PDF</button>
+      </div>
       <div class="btnrow" style="margin-bottom:12px">
-        <button class="btn sm" style="flex:1" onclick="printDoc()">🖨️ Print / PDF</button>
-        <button class="btn sm ghost" style="flex:1" onclick="shareDoc()">🔗 Share Text</button>
+        <button class="btn sm line" style="flex:1" onclick="printDoc()">🖨️ Print</button>
+        <button class="btn sm line" style="flex:1" onclick="shareDoc()">💬 Text</button>
         <button class="btn sm line" style="flex:0 0 auto" onclick="editCurrent()">✏️</button>
         <button class="btn sm danger" style="flex:0 0 auto" onclick="deleteCurrent()">🗑️</button>
       </div>
@@ -587,13 +591,27 @@ function deleteCurrent(){
   docs=docs.filter(x=>x.id!==current.id); DB.set('docs',docs);
   closeSheet('viewBD'); render(); toast('Deleted');
 }
+function docName(){ return current? ((current.type==='invoice'?'Invoice ':'Estimate ')+current.number) : 'Document'; }
 function printDoc(){
   // Inside the Android app, use the native print sheet (lets you "Save as PDF" to the device).
   if(window.AndroidApp && typeof window.AndroidApp.printPage==='function'){
-    const nm=(current? (current.type==='invoice'?'Invoice ':'Estimate ')+current.number : 'Document');
-    try{ window.AndroidApp.printPage(nm); return; }catch(e){}
+    try{ window.AndroidApp.printPage(docName()); return; }catch(e){}
   }
   window.print(); // browser fallback
+}
+function downloadDoc(){
+  // Save the invoice/estimate PDF to the device's Downloads folder.
+  if(window.AndroidApp && typeof window.AndroidApp.downloadPdf==='function'){
+    try{ window.AndroidApp.downloadPdf(docName()); toast('Saving PDF to Downloads…'); return; }catch(e){}
+  }
+  window.print(); // browser fallback -> choose "Save as PDF"
+}
+function shareDocPdf(){
+  // Open the Android share sheet with the PDF attached (WhatsApp, Gmail, etc.).
+  if(window.AndroidApp && typeof window.AndroidApp.sharePdf==='function'){
+    try{ window.AndroidApp.sharePdf(docName()); return; }catch(e){}
+  }
+  shareDoc(); // browser fallback -> share text
 }
 function shareDoc(){
   if(!current) return;
