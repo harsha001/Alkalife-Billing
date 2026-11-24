@@ -587,7 +587,14 @@ function deleteCurrent(){
   docs=docs.filter(x=>x.id!==current.id); DB.set('docs',docs);
   closeSheet('viewBD'); render(); toast('Deleted');
 }
-function printDoc(){ window.print(); }
+function printDoc(){
+  // Inside the Android app, use the native print sheet (lets you "Save as PDF" to the device).
+  if(window.AndroidApp && typeof window.AndroidApp.printPage==='function'){
+    const nm=(current? (current.type==='invoice'?'Invoice ':'Estimate ')+current.number : 'Document');
+    try{ window.AndroidApp.printPage(nm); return; }catch(e){}
+  }
+  window.print(); // browser fallback
+}
 function shareDoc(){
   if(!current) return;
   const t=computeTotals(current.items,current.custGstin);
