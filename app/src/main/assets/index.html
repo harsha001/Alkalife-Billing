@@ -234,6 +234,8 @@
     </div>
     <div class="card-pad">
 
+      <div class="card" id="sellerCard" onclick="openSettings()" style="cursor:pointer"></div>
+
       <div class="card">
         <div class="card-h">👤 Customer / Bill To</div>
         <div class="card-pad">
@@ -313,7 +315,7 @@
       <button class="btn sm" onclick="saveSettings()">Save</button>
     </div>
     <div class="card-pad">
-      <div class="hint">These details appear as the “From” on every invoice &amp; estimate.</div>
+      <div class="hint">🏢 Your GST details below are the <b>default on every invoice &amp; estimate</b> — enter them once and they print automatically as the “From”.</div>
       <div class="card"><div class="card-pad">
         <div class="field"><label>Business Name *</label><input id="sName" placeholder="Your company name"></div>
         <div class="field"><label>Your GSTIN</label><input id="sGstin" maxlength="15" placeholder="Your 15-digit GSTIN" style="text-transform:uppercase"></div>
@@ -400,7 +402,7 @@ function saveSettings(){
   settings={name:sName.value.trim(),gstin:sGstin.value.trim().toUpperCase(),phone:sPhone.value.trim(),
     email:sEmail.value.trim(),addr:sAddr.value.trim(),curr:(sCurr.value.trim()||'₹'),
     tax:(sTax.value.trim()||'0'),terms:sTerms.value.trim()};
-  DB.set('biz',settings); applyBiz(); closeSheet('setBD'); toast('Settings saved'); render();
+  DB.set('biz',settings); applyBiz(); renderSellerCard(); closeSheet('setBD'); toast('Default GST details saved'); render();
 }
 function applyBiz(){ hdrBiz.textContent=settings.name||'My Business';
   hdrSub.textContent = settings.gstin? ('GSTIN: '+settings.gstin) : 'Invoicing & Estimates'; }
@@ -445,7 +447,27 @@ function newDoc(type){
   fGstin.value='';fCustName.value='';fPhone.value='';fState.value='';fAddr.value='';fNotes.value=settings.terms||'';
   document.getElementById('gstFound').style.display='none';
   draftItems=[{name:'',qty:1,price:0,tax:Number(settings.tax)||0}];
-  renderItems(); openSheet('editorBD');
+  renderItems(); renderSellerCard(); openSheet('editorBD');
+}
+function renderSellerCard(){
+  const el=document.getElementById('sellerCard'); if(!el) return;
+  if(settings.gstin || (settings.name && settings.name!=='My Business')){
+    el.style.borderColor='var(--line)';
+    el.innerHTML=`<div class="card-h">🏢 Billing from (your details — on every bill) <span style="margin-left:auto;color:var(--brand);font-weight:700">Edit ›</span></div>
+      <div class="card-pad" style="padding-top:11px">
+        <div style="font-weight:700">${esc(settings.name||'My Business')}</div>
+        ${settings.gstin?`<div style="font-size:13px;color:var(--muted)">GSTIN: <b style="color:var(--ink)">${esc(settings.gstin)}</b></div>`:'<div style="font-size:13px;color:var(--amber)">GSTIN not set — tap to add</div>'}
+        ${settings.addr?`<div style="font-size:13px;color:var(--muted);white-space:pre-line">${esc(settings.addr)}</div>`:''}
+      </div>`;
+  } else {
+    el.style.borderColor='var(--amber)';
+    el.innerHTML=`<div class="card-pad" style="text-align:center">
+      <div style="font-size:28px">🏢</div>
+      <div style="font-weight:700;margin-top:4px">Add your business GST details</div>
+      <div style="font-size:13px;color:var(--muted);margin:4px 0 8px">Enter your GSTIN, name &amp; address once — they print on every invoice &amp; estimate automatically.</div>
+      <span class="btn sm" style="display:inline-flex">⚙️ Set up now</span>
+    </div>`;
+  }
 }
 function addItem(){ draftItems.push({name:'',qty:1,price:0,tax:Number(settings.tax)||0}); renderItems(); }
 function delItem(i){ draftItems.splice(i,1); if(!draftItems.length) addItem(); else renderItems(); }
@@ -583,7 +605,7 @@ function editCurrent(){
   fGstin.value=current.custGstin; fCustName.value=current.custName; fPhone.value=current.custPhone;
   fState.value=current.custState; fAddr.value=current.custAddr; fNotes.value=current.notes;
   document.getElementById('gstFound').style.display='none';
-  draftItems=current.items.map(x=>({...x})); renderItems();
+  draftItems=current.items.map(x=>({...x})); renderItems(); renderSellerCard();
   closeSheet('viewBD'); openSheet('editorBD');
 }
 function deleteCurrent(){
@@ -626,8 +648,9 @@ function shareDocPdf(){
 function shareDoc(){
   if(!current) return;
   const t=computeTotals(current.items,current.custGstin);
-  const txt=`${settings.name}\n${current.type==='invoice'?'INVOICE':'ESTIMATE'} ${current.number}\nDate: ${fmtDate(current.date)}\n`+
-    `To: ${current.custName}\n`+
+  const txt=`${settings.name}${settings.gstin?`\nGSTIN: ${settings.gstin}`:''}${settings.phone?`\n${settings.phone}`:''}\n`+
+    `\n${current.type==='invoice'?'INVOICE':'ESTIMATE'} ${current.number}\nDate: ${fmtDate(current.date)}\n`+
+    `To: ${current.custName}${current.custGstin?` (GSTIN: ${current.custGstin})`:''}\n`+
     current.items.map(it=>`• ${it.name} — ${it.qty} x ${money(it.price)} = ${money(it.qty*it.price)}`).join('\n')+
     `\nTotal: ${money(t.total)}\n`;
   if(navigator.share){ navigator.share({title:current.number, text:txt}).catch(()=>{}); }
